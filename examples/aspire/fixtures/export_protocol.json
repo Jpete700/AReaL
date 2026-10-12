@@ -1,0 +1,29 @@
+{
+  "schema_version": "consumed-export-contract-v1",
+  "source_revision": "cc21ab977127eb9a00ab39f46e219f5c0e1f072b",
+  "profile": {
+    "style": "individual",
+    "chat_template_type": "hf",
+    "discount": 1.0
+  },
+  "selection": "exact trusted consumed IDs in consumption order; reject unknown/duplicate/pending/foreign",
+  "terminal_reward": "last consumed completion; other selected raw per-call rewards zeroed",
+  "normalization": "one terminal scalar per member before flatten; raw and normalized retained",
+  "prepare": "/export_trajectories with export_id and per-session selections",
+  "ack": "/export_trajectories/ack",
+  "server_directory": "DataProxyConfig.export_snapshot_dir or AREAL_EXPORT_SNAPSHOT_DIR",
+  "durability_order": [
+    "server LOCAL tensor snapshot",
+    "controller materialize/verify/commit",
+    "ACK cleanup"
+  ],
+  "recovery": "same export_id/request fingerprint returns immutable snapshot; registered-worker ACK hint",
+  "router_incarnation": "cleanup matches original registration key, not reused public session ID",
+  "generation_seal": [
+    "/chat/completions",
+    "/v1/chat/completions",
+    "/v1/messages",
+    "internal helper"
+  ],
+  "model_acceptance": "protocol fixtures only until M1 step6 real neural capture"
+}

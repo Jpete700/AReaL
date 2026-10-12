@@ -1,0 +1,9 @@
+{
+  "mode": "mock",
+  "model": "scripted-mock-v1",
+  "temperature": 0.0,
+  "n": 1,
+  "store": true,
+  "stream": false,
+  "problem_file": "put_the_bowl_on_the_stove.json"
+}

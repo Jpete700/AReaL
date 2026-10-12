@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TrustedReplayResult v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "episode_id",
+    "code_sha256",
+    "state_identity",
+    "seed",
+    "status",
+    "success",
+    "reward",
+    "error_class",
+    "stdout",
+    "stderr",
+    "trace_hash",
+    "keyframe_hashes",
+    "wall_seconds",
+    "service_versions"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "replay-result-v1"
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "code_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "state_identity": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "enum": [
+        "success",
+        "failure",
+        "syntax_error",
+        "crash",
+        "timeout",
+        "forbidden_api",
+        "infrastructure_invalid"
+      ]
+    },
+    "success": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "reward": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "error_class": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "stdout": {
+      "type": "string"
+    },
+    "stderr": {
+      "type": "string"
+    },
+    "trace_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "keyframe_hashes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "wall_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "service_versions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "infrastructure_invalid"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "success": {
+            "type": "null"
+          },
+          "reward": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "success"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "success": {
+            "const": true
+          },
+          "reward": {
+            "const": 1
+          }
+        }
+      }
+    }
+  ]
+}

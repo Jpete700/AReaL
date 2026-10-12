@@ -5,9 +5,11 @@ from __future__ import annotations
 import asyncio
 import hmac
 import json
+import os
 import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -42,8 +44,10 @@ from areal.utils.data import concat_padded_tensors
 from areal.utils.dynamic_import import import_from_string
 from areal.utils.seeding import derive_deterministic_seed
 from areal.v2.inference_service.data_proxy.config import DataProxyConfig
+from areal.v2.inference_service.data_proxy.export_snapshot import ExportSnapshotStore
 from areal.v2.inference_service.data_proxy.pause import PauseState
 from areal.v2.inference_service.data_proxy.session import (
+    AcknowledgeExportRequest,
     ExportTrajectoriesRequest,
     ExportTrajectoriesResponse,
     ReadyNotification,
@@ -414,11 +418,19 @@ def create_app(config: DataProxyConfig) -> FastAPI:
 
     app = FastAPI(title="AReaL Data Proxy", lifespan=lifespan)
     _registered_models: dict[str, dict[str, str | None]] = {}
+    snapshot_dir = config.export_snapshot_dir or os.getenv("AREAL_EXPORT_SNAPSHOT_DIR")
+    snapshots = ExportSnapshotStore(Path(snapshot_dir)) if snapshot_dir else None
+    app.state.export_snapshots = snapshots
 
     async def _create_internal_chat_result(
         body_json: dict[str, Any],
         session: SessionData | None,
     ) -> tuple[Any, bool]:
+        if session is not None:
+            try:
+                session.check_generation_allowed()
+            except ValueError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
         areal_client: ArealOpenAI | None = app.state.areal_client
         if areal_client is None:
             raise HTTPException(status_code=503, detail="Inference backend unavailable")
@@ -629,6 +641,10 @@ def create_app(config: DataProxyConfig) -> FastAPI:
         token = _try_extract_bearer_token(request)
         session = _resolve_session_from_token(token, store)
         if session is not None:
+            try:
+                session.check_generation_allowed()
+            except ValueError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
             session.update_last_access()
 
         # -----------------------------------------------------------------
@@ -767,6 +783,10 @@ def create_app(config: DataProxyConfig) -> FastAPI:
         session = _resolve_session_from_token(token, store)
         if session is None:
             raise HTTPException(status_code=401, detail="Invalid session key")
+        try:
+            session.check_generation_allowed()
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         session.update_last_access()
 
         try:
@@ -851,7 +871,7 @@ def create_app(config: DataProxyConfig) -> FastAPI:
     # Trajectory export (admin key required)
     # =========================================================================
 
-    @app.post("/export_trajectories")
+    @app.post("/export_trajectories", response_model_exclude_none=True)
     async def export_trajectories(
         body: ExportTrajectoriesRequest, request: Request
     ) -> ExportTrajectoriesResponse:
@@ -862,6 +882,28 @@ def create_app(config: DataProxyConfig) -> FastAPI:
             raise HTTPException(
                 status_code=400,
                 detail="session_ids must be a non-empty list",
+            )
+        if body.export_id is not None:
+            if snapshots is None:
+                raise HTTPException(
+                    status_code=503,
+                    detail="durable export snapshot directory is not configured",
+                )
+            try:
+                trajectory, provenance, receipt = await snapshots.prepare(body, store)
+                remote = await asyncio.to_thread(
+                    _remotize_trajectory, trajectory, config.serving_addr
+                )
+                serialized = await asyncio.to_thread(serialize_value, remote)
+            except (ValueError, KeyError) as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            except OSError as exc:
+                raise HTTPException(
+                    status_code=503,
+                    detail="snapshot persistence failed; session retained",
+                ) from exc
+            return ExportTrajectoriesResponse(
+                traj=serialized, provenance=provenance, receipt=receipt
             )
 
         grouped_interactions: list[
@@ -913,6 +955,26 @@ def create_app(config: DataProxyConfig) -> FastAPI:
 
         serialized = serialize_value(traj)
         return ExportTrajectoriesResponse(traj=serialized)
+
+    @app.post("/export_trajectories/ack")
+    async def acknowledge_export(body: AcknowledgeExportRequest, request: Request):
+        _require_admin_key(request, app.state.session_store)
+        if snapshots is None:
+            raise HTTPException(
+                status_code=503, detail="durable export snapshots are not configured"
+            )
+        try:
+            return await snapshots.acknowledge(body, app.state.session_store)
+        except FileNotFoundError as exc:
+            raise HTTPException(
+                status_code=404, detail="snapshot receipt not found"
+            ) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except OSError as exc:
+            raise HTTPException(
+                status_code=503, detail="ack receipt write failed; snapshot retained"
+            ) from exc
 
     # =========================================================================
     # Runtime backend reconfiguration (for fork-based deployment)

@@ -109,6 +109,9 @@ class SessionRegistry:
     ) -> None:
         """Store both session_key→worker and session_id→worker. Upsert semantics."""
         async with self._lock:
+            previous = self._id_to_key.get(session_id)
+            if previous is not None and previous != session_key:
+                self._key_to_worker.pop(previous, None)
             self._key_to_worker[session_key] = worker_addr
             self._id_to_worker[session_id] = worker_addr
             self._id_to_key[session_id] = session_key
@@ -142,7 +145,9 @@ class SessionRegistry:
                 del self._id_to_worker[k]
             return len(keys_to_remove)
 
-    async def revoke_session(self, session_id: str) -> bool:
+    async def revoke_session(
+        self, session_id: str, expected_api_key: str | None = None
+    ) -> bool:
         """Remove a single session by its ID.
 
         Removes both the session_id→worker and session_key→worker mappings.
@@ -152,6 +157,11 @@ class SessionRegistry:
         """
         async with self._lock:
             if session_id not in self._id_to_worker:
+                return False
+            if (
+                expected_api_key is not None
+                and self._id_to_key.get(session_id) != expected_api_key
+            ):
                 return False
             del self._id_to_worker[session_id]
             session_key = self._id_to_key.pop(session_id, None)
@@ -236,14 +246,26 @@ class GroupRegistry:
     def __init__(self) -> None:
         self._groups: dict[str, GroupInfo] = {}
         self._lock = asyncio.Lock()
+        self._registration_keys: dict[str, dict[str, str] | None] = {}
 
     async def register_group(
-        self, group_id: str, worker_addr: str, session_ids: list[str]
+        self,
+        group_id: str,
+        worker_addr: str,
+        session_ids: list[str],
+        session_api_keys: dict[str, str] | None = None,
     ) -> None:
         """Store a group mapping. Raises ValueError if group_id already exists."""
         async with self._lock:
             if group_id in self._groups:
                 raise ValueError(f"Group {group_id} already registered")
+            if session_api_keys is not None and set(session_api_keys) != set(
+                session_ids
+            ):
+                raise ValueError("group registration keys do not match session roster")
+            self._registration_keys[group_id] = (
+                dict(session_api_keys) if session_api_keys is not None else None
+            )
             self._groups[group_id] = GroupInfo(
                 group_id=group_id,
                 worker_addr=worker_addr,
@@ -257,8 +279,14 @@ class GroupRegistry:
 
     async def revoke(self, group_id: str) -> list[str]:
         """Remove a group. Returns the session_ids that were in the group."""
+        session_ids, _ = await self.revoke_registration(group_id)
+        return session_ids
+
+    async def revoke_registration(
+        self, group_id: str
+    ) -> tuple[list[str], dict[str, str] | None]:
+        """Return original routing incarnation, guarding against reused public IDs."""
         async with self._lock:
             info = self._groups.pop(group_id, None)
-            if info is None:
-                return []
-            return info.session_ids
+            keys = self._registration_keys.pop(group_id, None)
+            return (info.session_ids if info else []), keys

@@ -1,0 +1,89 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "episode-export-reconciliation-v1"
+    },
+    "passed": {
+      "const": true
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attempted": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "successful": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed_or_cancelled": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "accepted_output_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "consumed_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "eligible_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "excluded_consumed_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "exclusion_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "each_output_instance_used_once": {
+      "const": true
+    },
+    "optimizer_updates": {
+      "const": 0
+    }
+  },
+  "required": [
+    "schema_version",
+    "passed",
+    "episode_id",
+    "session_id",
+    "attempted",
+    "successful",
+    "failed_or_cancelled",
+    "accepted_output_tokens",
+    "consumed_ids",
+    "eligible_ids",
+    "excluded_consumed_ids",
+    "exclusion_reason",
+    "each_output_instance_used_once",
+    "optimizer_updates"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

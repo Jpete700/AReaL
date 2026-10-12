@@ -1,0 +1,28 @@
+{
+  "schema_version": "inference-protocol-v1",
+  "source_revision": "cc21ab977127eb9a00ab39f46e219f5c0e1f072b",
+  "gateway_source_sha256": "a436ae6bb32956a54a3c344c6f5a70a2daa7368bf96665a6dccd7a10a5d79363",
+  "canonical_generation_route": "/chat/completions",
+  "generation_compatibility_aliases": [
+    "/v1/chat/completions"
+  ],
+  "responses_routes_supported": false,
+  "internal_response_model_placeholder": "None",
+  "identity_basis": "trusted configured checkpoint/tokenizer/parser + injected policy version, not response.model",
+  "capture_parameters": {
+    "n": 1,
+    "store": true,
+    "stream": false
+  },
+  "workflow_owner": [
+    "start_session",
+    "set_reward",
+    "export_trajectories",
+    "session cleanup"
+  ],
+  "agent_hook": "optional run_with_context; legacy run receives its original kwargs",
+  "retry_policy": "no SDK or application generation retries; injected TCP connect retries are traced",
+  "gateway_forward_retry_visibility": "exact consumed selection before reward/normalization; excluded candidates retained in snapshot audit",
+  "protocol_lab_backend": "synthetic byte-token ModelResponse engine; no real checkpoint inference",
+  "durable_export_contract": "export_protocol.json"
+}

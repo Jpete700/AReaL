@@ -1,0 +1,11 @@
+{
+  "schema_version": "report-contract-lock-v1",
+  "files": {
+    "fixtures/cpu_case_registry.json": "93307375e2d4a31f3968f1367662181845edaf2786fbaa0468c36a8ec4b2f5cc",
+    "schemas/audit_reconciliation.schema.json": "a668114ed774e2b46ba97e4754fdc9977b0e8a58d6de39f3564eeb4a9a423a06",
+    "schemas/cpu_acceptance.schema.json": "14584cdcfdb671fe4ad6c244daeeec3040d88c84604b8189885b01990b93db63",
+    "schemas/episode_result.schema.json": "77de83bc152a9003224cdae3bf2e20bab6ec5dbeeeb14faff1ac7e4d5634fe82",
+    "schemas/export_reconciliation.schema.json": "3a1228700450363acb737e2a416115666d578d158fa073488aedba1fab4038bd",
+    "schemas/export_reconciliation_batch.schema.json": "91242d62f4aadc940be0a818719001ddac56c6afc72cdcdba27d43e303327c54"
+  }
+}

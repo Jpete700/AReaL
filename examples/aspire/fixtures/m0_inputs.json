@@ -1,0 +1,54 @@
+{
+  "schema_version": "m0-input-pins-v1",
+  "source_revisions": {
+    "AReaL": "cc21ab977127eb9a00ab39f46e219f5c0e1f072b",
+    "ASPIRE": "f4c8939aab0af9b97690c561bd80e282940f7886",
+    "LIBERO-PRO": "47aaa8038930bcdc84ab9ea2867e2ffc8039ab4a",
+    "libero_dependencies/robosuite": "a498b087d4bc5a3981e3d27030d09bc537a537f3"
+  },
+  "input_hashes": {
+    "contracts/dependencies.json": "e1cf52902848f1183ec166cd5357a51556677ac3b9c54081b18d7ca827b6f712",
+    "contracts/model.json": "763ba5a864c5dceffcca6be6963afe7f298b0c7e428789d0ca27501933bc0c78",
+    "contracts/workspace.json": "f47e9334a00c3bf0c24f0c13eb3cee00a58be66fb44bff886ef0b034af1e5c9c",
+    "contracts/protocol.json": "46aac8944c1f7278d691fb23b9892b962a8c7fef39864658a38137d6cde441e0",
+    "contracts/result.schema.json": "1946df3f674d58e7305633e99a213ef195c2e0dd9897554c2bf290eafd033056",
+    "contracts/topology.json": "fbd35b52293e02d256cddbd51947223750287c05d058b43e16aec02b4001182c",
+    "contracts/config.json": "e2c8d8eea39471785cd93379d8b48241ad7dcda299013155dd02526e34a0de62",
+    "contracts/tokenizer_config.json": "60f6e8cb15c98dd07300a3cc465ea662de245d2095e4245616af21b2324db3fc",
+    "public/put_the_bowl_on_the_stove.json": "258a7e52b77d6fd10d8e61939f1c9780948dc36543741ff2fc0d3f53f7410a13",
+    "public/open_the_middle_drawer_of_the_cabinet.json": "b7ec6df9acdf7240cd0dbe8509ab0c6df558d8aa4d5be35714d8c2f5b75087c9",
+    "evidence/acceptance.json": "1365308da6bbdfb519a9719caeaaa9f3c2766b321d1d24830754cbd1e3c99d9e",
+    "evidence/state-audit-summary.json": "694db8a3bfd80fca4c048b9ac6c55ba393c745c736b7dfa7b2571acc0566116e"
+  },
+  "workspace_digest": "9d85239c133632d9533c208fd619ed2f336226a5cc337a4369cbe3486f664058",
+  "L0_digest": "3e88d537f9c9478d72a8f8fc16abe977d144fb12cccef2c238304daba1cb37a0",
+  "reset_profile": "state-disjoint-reset-v1: seed, reset, set_init_state, 10 settling steps; no later reset",
+  "model_identity": {
+    "mock": "scripted-mock-v1",
+    "future_internal_actor": {
+      "repository": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
+      "tokenizer_metadata_hashes": {
+        "config.json": "e2c8d8eea39471785cd93379d8b48241ad7dcda299013155dd02526e34a0de62",
+        "tokenizer_config.json": "60f6e8cb15c98dd07300a3cc465ea662de245d2095e4245616af21b2324db3fc"
+      },
+      "chat_template_type": "hf",
+      "tool_call_parser_candidate": "qwen3_coder",
+      "reasoning_parser": null,
+      "backend_candidate": "SGLang non-LoRA inference + FSDP actor",
+      "weights_downloaded": false,
+      "deployed": false,
+      "internal_parser_and_token_capture_verified": false
+    }
+  },
+  "checkout": {
+    "type": "full",
+    "required_directories": [
+      "areal/v2/inference_service",
+      "areal/experimental/openai",
+      "tests/v2/inference_service",
+      "tests/experimental/openai"
+    ]
+  },
+  "private_evaluator_assets_copied": false
+}

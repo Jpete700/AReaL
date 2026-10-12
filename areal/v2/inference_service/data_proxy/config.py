@@ -29,3 +29,6 @@ class DataProxyConfig:
     chat_template_type: str = "hf"
     message_preprocessors: tuple[str, ...] = ()
     prefix_matcher: str | None = None
+
+    # Opt-in durable snapshots; may also be supplied through AREAL_EXPORT_SNAPSHOT_DIR.
+    export_snapshot_dir: str | None = None

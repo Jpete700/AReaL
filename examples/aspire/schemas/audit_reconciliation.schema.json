@@ -1,0 +1,101 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "audit-reconciliation-v1"
+    },
+    "passed": {
+      "const": true
+    },
+    "synthetic": {
+      "type": "boolean"
+    },
+    "attempted": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "successful": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed_or_cancelled": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "consumed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "abandoned": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tool_calls": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "tool_results": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "duplicate_tools": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "trained_responses": {
+      "const": 0
+    },
+    "explicitly_excluded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "completion_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "completion_id",
+          "reason"
+        ]
+      }
+    },
+    "pending_training_selection": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "passed",
+    "synthetic",
+    "attempted",
+    "successful",
+    "failed_or_cancelled",
+    "consumed",
+    "abandoned",
+    "tool_calls",
+    "tool_results",
+    "duplicate_tools",
+    "trained_responses",
+    "explicitly_excluded",
+    "pending_training_selection",
+    "scope"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import copy
 import hashlib
 import json
+import math
 import os
 import threading
 import time
@@ -217,6 +219,88 @@ class InteractionCache(OrderedDict[str, InteractionWithTokenLogpReward]):
                 sorted(orphan_ids),
             )
         return list(orphan_ids)
+
+    def snapshot_consumed(
+        self,
+        consumed_ids: list[str],
+        terminal_reward: float,
+    ) -> "InteractionCache":
+        """Copy exact consumed generations, leaving raw cache and tensors unchanged.
+
+        This strict terminal-only path supports HF/individual export. Selection
+        order is actual consumption order, never creation-time retry heuristics.
+        """
+        if not consumed_ids or len(set(consumed_ids)) != len(consumed_ids):
+            raise ValueError("consumed IDs must be nonempty and unique")
+        if not math.isfinite(terminal_reward):
+            raise ValueError("terminal reward must be finite")
+        with self._lock:
+            if self._apply_reward_discount_called:
+                raise ValueError(
+                    "raw cache already reward-propagated; cannot prove terminal attribution"
+                )
+            raw = dict(self.items())
+            for key, value in raw.items():
+                if value.interaction_id is None or value.output_message_list is None:
+                    raise ValueError(
+                        f"pending generation {key}; close/cancel it before snapshot"
+                    )
+            selected = []
+            for key in consumed_ids:
+                if key not in raw:
+                    raise ValueError(f"consumed ID {key} is missing")
+                value = raw[key]
+                if value.interaction_id != key or value.chat_template_type != "hf":
+                    raise ValueError(
+                        "consumed snapshot requires exact IDs and hf template"
+                    )
+                response = value.model_response
+                if response is None or not response.output_tokens:
+                    raise ValueError("consumed generation lacks sampled token evidence")
+                if (
+                    len(response.output_tokens) != len(response.output_logprobs)
+                    or len(response.output_tokens) != len(response.output_versions)
+                    or any(
+                        isinstance(x, bool) or not isinstance(x, int) or x < 0
+                        for x in response.input_tokens
+                        + response.output_tokens
+                        + response.output_versions
+                    )
+                    or any(
+                        isinstance(x, bool)
+                        or not isinstance(x, (int, float))
+                        or not math.isfinite(x)
+                        for x in response.output_logprobs
+                    )
+                ):
+                    raise ValueError("malformed sampled token/logprob/version evidence")
+                clone = copy.copy(value)
+                clone.messages = copy.deepcopy(value.messages)
+                clone.output_message_list = copy.deepcopy(value.output_message_list)
+                clone.model_response = copy.copy(response)
+                for field in (
+                    "input_tokens",
+                    "output_tokens",
+                    "output_logprobs",
+                    "output_versions",
+                ):
+                    setattr(clone.model_response, field, list(getattr(response, field)))
+                # Rebuild from sampled evidence; _cache may have stale rewards/parents.
+                clone._cache = None
+                clone.parent = None
+                clone.reward = 0.0
+                clone.original_reward = None
+                selected.append((key, clone))
+        result = InteractionCache(session_id=self._session_id)
+        for key, clone in selected:
+            for previous in reversed(list(result.values())):
+                prefix = previous.messages + previous.output_message_list
+                if default_prefix_matcher(prefix, clone.messages):
+                    clone.parent = previous
+                    break
+            OrderedDict.__setitem__(result, key, clone)
+        result.set_reward(consumed_ids[-1], float(terminal_reward))
+        return result
 
     def apply_reward_discount(
         self, turn_discount: float = 1.0

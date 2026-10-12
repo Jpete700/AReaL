@@ -1,0 +1,117 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "mock-episode-result-v1"
+    },
+    "synthetic": {
+      "type": "boolean"
+    },
+    "generation_source": {
+      "enum": [
+        "scripted_mock",
+        "areal_internal_http"
+      ]
+    },
+    "reward_source": {
+      "const": "synthetic-static-v1"
+    },
+    "state": {
+      "enum": [
+        "scored",
+        "infrastructure_invalid",
+        "aborted",
+        "no_submission"
+      ]
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reward": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "model_calls": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "generated_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "feedback_replays": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "consumed_completion_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "submission": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "generated_code_executed": {
+      "const": false
+    },
+    "training_tensors_created": {
+      "const": false
+    },
+    "optimizer_updates": {
+      "const": 0
+    }
+  },
+  "required": [
+    "schema_version",
+    "synthetic",
+    "generation_source",
+    "reward_source",
+    "state",
+    "reason",
+    "reward",
+    "model_calls",
+    "generated_tokens",
+    "feedback_replays",
+    "consumed_completion_ids",
+    "submission",
+    "generated_code_executed",
+    "training_tensors_created",
+    "optimizer_updates"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "infrastructure_invalid",
+              "aborted"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reward": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

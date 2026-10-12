@@ -12,7 +12,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from areal.experimental.openai.cache import InteractionCache, PrefixMatcher
 from areal.experimental.openai.types import InteractionWithTokenLogpReward
@@ -61,6 +61,14 @@ class SetRewardRequest(BaseModel):
     model: str | None = None
 
 
+class CompletionSelection(BaseModel):
+    """Trusted runtime consumption ledger; never supplied by generated code."""
+
+    consumed_ids: list[str] = Field(default_factory=list)
+    provenance: dict[str, Any] = Field(default_factory=dict)
+    valid: bool = True
+
+
 class ExportTrajectoriesRequest(BaseModel):
     """Request to export trajectories for one or more sessions.
 
@@ -78,12 +86,25 @@ class ExportTrajectoriesRequest(BaseModel):
     drop_retry_orphans: bool = False
     reward_normalization: bool = False
     discard_trajectory: bool = False
+    export_id: str | None = None
+    selections: dict[str, CompletionSelection] | None = None
+    worker_addr: str | None = None  # Gateway validates retry routing hint.
+
+
+class AcknowledgeExportRequest(BaseModel):
+    export_id: str
+    snapshot_sha256: str
+    session_ids: list[str]
+    group_id: str | None = None
+    worker_addr: str | None = None
 
 
 class ExportTrajectoriesResponse(BaseModel):
     """Response containing merged serialized interactions."""
 
     traj: dict[str, Any]
+    provenance: dict[str, Any] | None = None
+    receipt: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -140,6 +161,8 @@ class SessionData:
         prefix_matcher: PrefixMatcher | None = None,
     ):
         self.session_id = session_id
+        self.instance_id = uuid.uuid4().hex
+        self._snapshot_export_id: str | None = None
         self.sampling_seed_identity = sampling_seed_identity or session_id
         self._set_reward_finish_timeout = set_reward_finish_timeout
         self._prefix_matcher = prefix_matcher
@@ -327,6 +350,56 @@ class SessionData:
         self._active_completions[interaction_id] = interaction
         self.update_last_access()
         return interaction_id
+
+    def reserve_snapshot(self, export_id: str) -> None:
+        with self._lock:
+            if self._snapshot_export_id not in (None, export_id):
+                raise ValueError("session already reserved by another export")
+            self._snapshot_export_id = export_id
+
+    def check_generation_allowed(self) -> None:
+        with self._lock:
+            if self._snapshot_export_id is not None:
+                raise ValueError(
+                    "session generation closed while export awaits acknowledgement"
+                )
+
+    def peek_ready(self, trajectory_id: int | None = None) -> ReadyTrajectory:
+        with self._lock:
+            if not self._ready_trajectories:
+                raise KeyError("no ready trajectory")
+            target = (
+                trajectory_id
+                if trajectory_id is not None
+                else next(reversed(self._ready_trajectories))
+            )
+            return self._ready_trajectories[target]
+
+    def prepare_consumed(
+        self,
+        consumed_ids: list[str],
+        trajectory_id: int | None = None,
+    ) -> tuple[ReadyTrajectory, InteractionCache]:
+        ready = self.peek_ready(trajectory_id)
+        if not consumed_ids or ready.interaction_id != consumed_ids[-1]:
+            raise ValueError("terminal reward must belong to last consumed completion")
+        reward = ready.completions[consumed_ids[-1]].reward
+        if reward is None:
+            raise ValueError("terminal reward is missing")
+        return ready, ready.completions.snapshot_consumed(consumed_ids, float(reward))
+
+    def acknowledge_snapshot(self, export_id: str, trajectory_ids: list[int]) -> None:
+        with self._lock:
+            if self._snapshot_export_id not in (None, export_id):
+                raise ValueError("export reservation conflict")
+            if self._active_completions:
+                raise ValueError("new active generation would be lost by cleanup")
+            remaining = set(self._ready_trajectories) - set(trajectory_ids)
+            if remaining:
+                raise ValueError("other ready trajectories would be lost by cleanup")
+            for target in trajectory_ids:
+                self._ready_trajectories.pop(target, None)
+            self._snapshot_export_id = None
 
     def export_trajectory(
         self,

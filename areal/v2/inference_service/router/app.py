@@ -403,7 +403,12 @@ def create_app(config: RouterConfig) -> FastAPI:
 
         session_ids = [e.session_id for e in body.sessions]
         await group_registry.register_group(
-            body.group_id, body.worker_addr, session_ids
+            body.group_id,
+            body.worker_addr,
+            session_ids,
+            session_api_keys={
+                entry.session_id: entry.session_api_key for entry in body.sessions
+            },
         )
 
         return StatusResponse(status="ok")
@@ -416,9 +421,16 @@ def create_app(config: RouterConfig) -> FastAPI:
     async def remove_session(body: RemoveSessionRequest, request: Request):
         _require_admin_key(request, config.admin_api_key)
 
-        session_ids = await group_registry.revoke(body.group_id)
+        session_ids, registration_keys = await group_registry.revoke_registration(
+            body.group_id
+        )
         for sid in session_ids:
-            await session_registry.revoke_session(sid)
+            await session_registry.revoke_session(
+                sid,
+                expected_api_key=registration_keys[sid]
+                if registration_keys is not None
+                else None,
+            )
         return RemoveSessionResponse(
             status="ok",
             removed=len(session_ids) > 0,

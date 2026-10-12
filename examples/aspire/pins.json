@@ -1,0 +1,115 @@
+{
+  "schema_version": "aspire-m1-pins-v1",
+  "release_date": "2026-10-08",
+  "source_revisions": {
+    "AReaL": "cc21ab977127eb9a00ab39f46e219f5c0e1f072b",
+    "ASPIRE": "f4c8939aab0af9b97690c561bd80e282940f7886",
+    "LIBERO-PRO": "47aaa8038930bcdc84ab9ea2867e2ffc8039ab4a",
+    "libero_dependencies/robosuite": "a498b087d4bc5a3981e3d27030d09bc537a537f3"
+  },
+  "source_identity": "pinned base revisions plus complete M1.patch and source_manifest.json; no commit or push",
+  "historical_m0_pins": "fixtures/m0_inputs.json",
+  "historical_m0_model_status_is_not_current": true,
+  "model": {
+    "repository": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
+    "weights_verified": true,
+    "verified_at": "2026-10-05",
+    "weight_shards": {
+      "model-00001-of-00016.safetensors": "c8f4ee157c2bdb00521d0f422c08ef16f0f3f5f7e234786d829401d627d2e167",
+      "model-00002-of-00016.safetensors": "8cf85f0e5a0ea8d8cd3fd1f411175d811ca735571210873fd42bb5eec0b35406",
+      "model-00003-of-00016.safetensors": "4fa5cc233e965c8671d32a335045697fc4317c8d2939d8ca5fb9ef62d0233207",
+      "model-00004-of-00016.safetensors": "c10ff15f08abea0ff60b2fc345dcc34191bc8049d05d3bece6b081a99cbfc4c8",
+      "model-00005-of-00016.safetensors": "65d3701e2354a8cf6e5afa3f84520bf81effcdc29b0c481dbbeb089f80349100",
+      "model-00006-of-00016.safetensors": "7c832bf9e527b7b6f3184b561de05f30981bdcfdffe9c69e69064cdaa97071b5",
+      "model-00007-of-00016.safetensors": "71a710c3ff52e85d22ae3f5b10b9a4dd49821c9533460fb1d4bb21593f71b585",
+      "model-00008-of-00016.safetensors": "cd2861625e1bd8a212151445072b9d826c9754fd4618f8b83c2857fc0854b778",
+      "model-00009-of-00016.safetensors": "8335225fd61c0fe283a83463a8d9c5c19e211ea8048925b031a088f274eb9c4e",
+      "model-00010-of-00016.safetensors": "421481c42e8d85891c9d88492d7530d6b6d8b15c23a6db6a9b7438e0b6161330",
+      "model-00011-of-00016.safetensors": "d7dd447928ddec67a3ec06d5bc4fd99dde9ac5bdf0b6ab500faca5dfdfb963b4",
+      "model-00012-of-00016.safetensors": "349a0b0247d244ffef34bc23b403ce756f515242323f024a5f8028c109a798af",
+      "model-00013-of-00016.safetensors": "52e7f570649b27bc35b8cd27ac643d2158c02a5c76078c80a8afc449377b508e",
+      "model-00014-of-00016.safetensors": "0b30aed1b55b3f25fbf2c5e81784438d0a08461c9518e26e11987eb10d80ebd7",
+      "model-00015-of-00016.safetensors": "cb8b3b13c0519874ed0cbe6832ab57e51476e3821c83f0ffe4ec83a8d23fc5f4",
+      "model-00016-of-00016.safetensors": "778479fa2b8b766ba1c7bfc56a71ed9b060081e0fbc5eb4edafd19a1d6b4c116"
+    },
+    "tokenizer_revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
+    "tokenizer_metadata_hashes": {
+      "config.json": "e2c8d8eea39471785cd93379d8b48241ad7dcda299013155dd02526e34a0de62",
+      "tokenizer_config.json": "60f6e8cb15c98dd07300a3cc465ea662de245d2095e4245616af21b2324db3fc"
+    },
+    "dtype": "bfloat16",
+    "quantization": null
+  },
+  "inference_profile": {
+    "backend": "SGLang",
+    "kind": "internal",
+    "model_route": "default",
+    "canonical_route": "/chat/completions",
+    "n": 1,
+    "store": true,
+    "stream": false,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "chat_template_type": "hf",
+    "tool_call_parser": "qwen3_coder",
+    "reasoning_parser": "",
+    "export_style": "individual",
+    "turn_discount": 1.0,
+    "policy_version": 0,
+    "policy_version_source": "fixed InfBridge initial label; not a per-token backend checkpoint hash"
+  },
+  "validated_serving_environment": {
+    "python": "3.12.14",
+    "sglang": "0.5.10.post1",
+    "torch": "2.9.1+cu128",
+    "transformers": "5.3.0",
+    "tensor_parallel_size": 4,
+    "context_length": 32768,
+    "chunked_prefill_size": 4096,
+    "prefill_alignment": 4096,
+    "local_compatibility_patches": [
+      "sglang-native-rope-compat.patch",
+      "sglang-clamp-position-compat.patch"
+    ],
+    "system_driver_cuda_rebuilt": false
+  },
+  "capture": {
+    "performed_at": "2026-10-08",
+    "single_node": true,
+    "scheduler_launch_exercised": false,
+    "rows": 17,
+    "sampled_output_positions": 1021,
+    "coding_rows": 15,
+    "coding_sampled_output_positions": 1017,
+    "reward_source": "synthetic-static-v1",
+    "coding_outcome": "two scored/submitted controlled repair episodes; synthetic-static reward1 each",
+    "service_status": "stopped after capture; shutdown receipt preserved; artifacts and weights preserved",
+    "controlled_defect_repair_validation": true,
+    "coding_group_size": 2,
+    "latest_run": "m1/step6/capture-05/run-1791450090503763739"
+  },
+  "m0_identity": {
+    "workspace_digest": "9d85239c133632d9533c208fd619ed2f336226a5cc337a4369cbe3486f664058",
+    "L0_digest": "3e88d537f9c9478d72a8f8fc16abe977d144fb12cccef2c238304daba1cb37a0",
+    "reset_profile": "state-disjoint-reset-v1: seed, reset, set_init_state, 10 settling steps; no later reset",
+    "input_hashes": {
+      "contracts/dependencies.json": "e1cf52902848f1183ec166cd5357a51556677ac3b9c54081b18d7ca827b6f712",
+      "contracts/model.json": "763ba5a864c5dceffcca6be6963afe7f298b0c7e428789d0ca27501933bc0c78",
+      "contracts/workspace.json": "f47e9334a00c3bf0c24f0c13eb3cee00a58be66fb44bff886ef0b034af1e5c9c",
+      "contracts/protocol.json": "46aac8944c1f7278d691fb23b9892b962a8c7fef39864658a38137d6cde441e0",
+      "contracts/result.schema.json": "1946df3f674d58e7305633e99a213ef195c2e0dd9897554c2bf290eafd033056",
+      "contracts/topology.json": "fbd35b52293e02d256cddbd51947223750287c05d058b43e16aec02b4001182c",
+      "contracts/config.json": "e2c8d8eea39471785cd93379d8b48241ad7dcda299013155dd02526e34a0de62",
+      "contracts/tokenizer_config.json": "60f6e8cb15c98dd07300a3cc465ea662de245d2095e4245616af21b2324db3fc",
+      "public/put_the_bowl_on_the_stove.json": "258a7e52b77d6fd10d8e61939f1c9780948dc36543741ff2fc0d3f53f7410a13",
+      "public/open_the_middle_drawer_of_the_cabinet.json": "b7ec6df9acdf7240cd0dbe8509ab0c6df558d8aa4d5be35714d8c2f5b75087c9",
+      "evidence/acceptance.json": "1365308da6bbdfb519a9719caeaaa9f3c2766b321d1d24830754cbd1e3c99d9e",
+      "evidence/state-audit-summary.json": "694db8a3bfd80fca4c048b9ac6c55ba393c745c736b7dfa7b2571acc0566116e"
+    }
+  },
+  "optimizer_updates": 0,
+  "weight_updates": 0,
+  "generated_code_executed": false,
+  "m2_m3_boundary": "M2_M3_BOUNDARY.md"
+}

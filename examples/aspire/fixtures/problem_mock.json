@@ -1,0 +1,20 @@
+{
+  "schema_version": "public-problem-v1",
+  "problem_id": "libero_goal_swap/put_the_bowl_on_the_stove",
+  "suite": "libero_goal_swap",
+  "task": "put_the_bowl_on_the_stove",
+  "task_language": "Put the bowl on the stove",
+  "feedback_seeds": [
+    51,
+    52
+  ],
+  "observation_profile": "text-perception-v1",
+  "budget": {
+    "model_calls": 12,
+    "generated_tokens": 16384,
+    "tokens_per_call": 2048,
+    "context_tokens": 32768,
+    "feedback_replays": 3,
+    "wall_seconds": 1800
+  }
+}

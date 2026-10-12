@@ -1,0 +1,234 @@
+{
+  "schema_version": "scripted-episode-v1",
+  "synthetic": true,
+  "responses": [
+    {
+      "id": "mock-completion-1",
+      "object": "chat.completion",
+      "model": "scripted-mock-v1",
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": "tool_calls",
+          "message": {
+            "role": "assistant",
+            "content": "Synthetic repair episode turn 1",
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "read",
+                  "arguments": "{\"path\": \"api-reference.md\"}"
+                }
+              },
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "read",
+                  "arguments": "{\"path\": \"L0/localize.md\"}"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "usage": {
+        "completion_tokens": 100
+      },
+      "synthetic": true
+    },
+    {
+      "id": "mock-completion-2",
+      "object": "chat.completion",
+      "model": "scripted-mock-v1",
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": "tool_calls",
+          "message": {
+            "role": "assistant",
+            "content": "Synthetic repair episode turn 2",
+            "tool_calls": [
+              {
+                "id": "call-3",
+                "type": "function",
+                "function": {
+                  "name": "read",
+                  "arguments": "{\"path\": \"solution.py\"}"
+                }
+              },
+              {
+                "id": "call-4",
+                "type": "function",
+                "function": {
+                  "name": "write",
+                  "arguments": "{\"path\": \"solution.py\", \"content\": \"obs = get_observation()\\nsegment_sam3_text_prompt(rgb, \\\"bowl\\\")\\n\"}"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "usage": {
+        "completion_tokens": 100
+      },
+      "synthetic": true
+    },
+    {
+      "id": "mock-completion-3",
+      "object": "chat.completion",
+      "model": "scripted-mock-v1",
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": "tool_calls",
+          "message": {
+            "role": "assistant",
+            "content": "Synthetic repair episode turn 3",
+            "tool_calls": [
+              {
+                "id": "call-5",
+                "type": "function",
+                "function": {
+                  "name": "replay",
+                  "arguments": "{\"code_sha256\": \"d3133b7b53f8552fa868ad60b6e3b7d59ac566c0269c965d18055223157b920a\", \"seed\": 51}"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "usage": {
+        "completion_tokens": 100
+      },
+      "synthetic": true
+    },
+    {
+      "id": "mock-completion-4",
+      "object": "chat.completion",
+      "model": "scripted-mock-v1",
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": "tool_calls",
+          "message": {
+            "role": "assistant",
+            "content": "Synthetic repair episode turn 4",
+            "tool_calls": [
+              {
+                "id": "call-6",
+                "type": "function",
+                "function": {
+                  "name": "read_trace",
+                  "arguments": "{\"replay_id\": \"replay-1\"}"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "usage": {
+        "completion_tokens": 100
+      },
+      "synthetic": true
+    },
+    {
+      "id": "mock-completion-5",
+      "object": "chat.completion",
+      "model": "scripted-mock-v1",
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": "tool_calls",
+          "message": {
+            "role": "assistant",
+            "content": "Synthetic repair episode turn 5",
+            "tool_calls": [
+              {
+                "id": "call-7",
+                "type": "function",
+                "function": {
+                  "name": "edit",
+                  "arguments": "{\"path\": \"solution.py\", \"old\": \"obs = get_observation()\\n\", \"new\": \"obs = get_observation()\\nrgb = obs[\\\"agentview\\\"][\\\"images\\\"][\\\"rgb\\\"]\\n\"}"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "usage": {
+        "completion_tokens": 100
+      },
+      "synthetic": true
+    },
+    {
+      "id": "mock-completion-6",
+      "object": "chat.completion",
+      "model": "scripted-mock-v1",
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": "tool_calls",
+          "message": {
+            "role": "assistant",
+            "content": "Synthetic repair episode turn 6",
+            "tool_calls": [
+              {
+                "id": "call-8",
+                "type": "function",
+                "function": {
+                  "name": "replay",
+                  "arguments": "{\"code_sha256\": \"285a269f1d8a1e3a0f07b10dd90b6395566555c7102ae8531bd8f9e0fb1d5b18\", \"seed\": 52}"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "usage": {
+        "completion_tokens": 100
+      },
+      "synthetic": true
+    },
+    {
+      "id": "mock-completion-7",
+      "object": "chat.completion",
+      "model": "scripted-mock-v1",
+      "choices": [
+        {
+          "index": 0,
+          "finish_reason": "tool_calls",
+          "message": {
+            "role": "assistant",
+            "content": "Synthetic repair episode turn 7",
+            "tool_calls": [
+              {
+                "id": "call-9",
+                "type": "function",
+                "function": {
+                  "name": "submit",
+                  "arguments": "{\"path\": \"solution.py\", \"code_sha256\": \"285a269f1d8a1e3a0f07b10dd90b6395566555c7102ae8531bd8f9e0fb1d5b18\"}"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "usage": {
+        "completion_tokens": 100
+      },
+      "synthetic": true
+    }
+  ],
+  "expected": {
+    "model_calls": 7,
+    "tool_calls": 9,
+    "feedback_replays": 2,
+    "reward": 1.0,
+    "first_replay_status": "crash",
+    "second_replay_status": "success",
+    "final_code_sha256": "285a269f1d8a1e3a0f07b10dd90b6395566555c7102ae8531bd8f9e0fb1d5b18"
+  }
+}

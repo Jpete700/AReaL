@@ -110,6 +110,28 @@ def create_app(config: GatewayConfig) -> FastAPI:
                 _fallback_client = create_httpx_client(timeout=config.router_timeout)
             return _fallback_client
 
+    async def _snapshot_worker(body: dict) -> str:
+        """Retry hint must name a registered worker, never an arbitrary URL."""
+        hinted = body.get("worker_addr")
+        if hinted is not None:
+            response = await _client().get(
+                f"{config.router_addr}/workers",
+                headers={"Authorization": f"Bearer {config.admin_api_key}"},
+                timeout=config.router_timeout,
+            )
+            response.raise_for_status()
+            registered = {worker["addr"] for worker in response.json()["workers"]}
+            if hinted not in registered:
+                raise RouterKeyRejectedError("snapshot worker is not registered", 403)
+            return hinted
+        return await query_router(
+            config.router_addr,
+            timeout=config.router_timeout,
+            session_id=body["session_ids"][0],
+            admin_api_key=config.admin_api_key,
+            client=_client(),
+        )
+
     # =========================================================================
     # Health
     # =========================================================================
@@ -504,13 +526,7 @@ def create_app(config: GatewayConfig) -> FastAPI:
             return JSONResponse({"error": "session_ids is required"}, status_code=400)
 
         try:
-            worker_addr = await query_router(
-                config.router_addr,
-                timeout=config.router_timeout,
-                session_id=session_ids[0],
-                admin_api_key=config.admin_api_key,
-                client=_client(),
-            )
+            worker_addr = await _snapshot_worker(body_json)
         except (RouterUnreachableError, RouterKeyRejectedError) as exc:
             return _router_error_response(exc)
 
@@ -522,6 +538,12 @@ def create_app(config: GatewayConfig) -> FastAPI:
             config.forward_timeout,
             client=_client(),
         )
+
+        if resp.status_code == 200 and body_json.get("export_id") is not None:
+            data = resp.json()
+            data["receipt"]["worker_addr"] = worker_addr
+            # PREPARE is non-destructive. Route pinning survives lost responses/sink failures.
+            return JSONResponse(data)
 
         if resp.status_code == 200 and group_id is not None:
             await revoke_session_in_router(
@@ -536,6 +558,46 @@ def create_app(config: GatewayConfig) -> FastAPI:
             content=resp.content,
             status_code=resp.status_code,
             media_type=resp.headers.get("content-type"),
+        )
+
+    @app.post("/export_trajectories/ack")
+    async def acknowledge_export(request: Request):
+        require_admin_key(request, config.admin_api_key)
+        body = await request.json()
+        if not body.get("session_ids") or not body.get("export_id"):
+            return JSONResponse(
+                {"error": "snapshot identity and session roster required"},
+                status_code=400,
+            )
+        try:
+            worker_addr = await _snapshot_worker(body)
+        except (RouterUnreachableError, RouterKeyRejectedError) as exc:
+            return _router_error_response(exc)
+        response = await forward_request(
+            f"{worker_addr}/export_trajectories/ack",
+            json.dumps(body).encode(),
+            _forwarding_headers(dict(request.headers)),
+            config.forward_timeout,
+            client=_client(),
+        )
+        if response.status_code == 200:
+            ack = response.json()
+            if (
+                ack.get("acknowledged")
+                and ack.get("remove_session")
+                and ack.get("group_id")
+            ):
+                await revoke_session_in_router(
+                    config.router_addr,
+                    config.admin_api_key,
+                    ack["group_id"],
+                    timeout=config.router_timeout,
+                    client=_client(),
+                )
+        return Response(
+            content=response.content,
+            status_code=response.status_code,
+            media_type=response.headers.get("content-type"),
         )
 
     # =========================================================================
