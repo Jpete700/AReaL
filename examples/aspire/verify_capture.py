@@ -135,7 +135,9 @@ def verify_capture(dataset: Path, evidence: Path) -> dict:
     }
 
 
-def verify_repair_episode(episode: Path, *, require_neural: bool = True) -> dict:
+def verify_repair_episode(
+    episode: Path, *, require_neural: bool = True, real_reward: bool = False
+) -> dict:
     """Require a causally complete repair attempt; a scored zero is allowed."""
     from .audit import canonical, sha256
     from .collect import FIXTURES, reconcile
@@ -260,14 +262,28 @@ def verify_repair_episode(episode: Path, *, require_neural: bool = True) -> dict
     if sha256(code) != final_hash or submission["artifact_hash"] != final_hash:
         fail("submitted artifact mismatch")
     frozen = [e for e in events if e["event_type"] == "submission_frozen"]
-    terminal = [e for e in events if e["event_type"] == "terminal_mock_score"]
+    terminal = [
+        e
+        for e in events
+        if e["event_type"]
+        == ("terminal_simulator_score" if real_reward else "terminal_mock_score")
+    ]
     if (
         len(frozen) != 1
         or len(terminal) != 1
         or any(e["code_sha256"] != final_hash for e in frozen + terminal)
     ):
         fail("terminal score/submission attribution mismatch")
-    if terminal[0]["reward"] != result["reward"] or result["reward"] not in (0.0, 1.0):
+    valid_reward = (
+        (
+            isinstance(result["reward"], (int, float))
+            and math.isfinite(result["reward"])
+            and 0 <= result["reward"] <= 1
+        )
+        if real_reward
+        else result["reward"] in (0.0, 1.0)
+    )
+    if terminal[0]["reward"] != result["reward"] or not valid_reward:
         fail("terminal reward mismatch")
     if (episode / "workspace" / submission["path"]).read_bytes() != code:
         fail("frozen workspace changed")
@@ -369,7 +385,7 @@ def verify_repair_episode(episode: Path, *, require_neural: bool = True) -> dict
                             "consumed_completion_ids": consumed,
                             "cross_generation_feedback_visibility": True,
                             "submission_frozen": True,
-                            "robot_execution": False,
+                            "robot_execution": real_reward,
                             "optimizer_updates": 0,
                         }
     fail("read/fail/inspect/model-edit/replay/submit causal chain was not found")

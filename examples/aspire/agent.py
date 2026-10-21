@@ -33,6 +33,31 @@ class AspireAgent:
     """
 
     requires_consumed_export = True
+    reward_source = "synthetic-static-v1"
+
+    def prepare_manifest(self, manifest):
+        return manifest
+
+    def create_evaluator(self, audit):
+        return MockEvaluator(audit)
+
+    async def initialize_evaluator(self, evaluator):
+        return None
+
+    def qualify_episode(self, root):
+        return verify_repair_episode(root)
+
+    def create_broker(self, workspace, problem, evaluator, audit):
+        return ToolBroker(workspace, problem, evaluator, audit)
+
+    async def initialize_broker(self, broker):
+        return None
+
+    def create_runtime(self, problem, config, transport, broker, audit):
+        return CodingRuntime(problem, config, transport, broker, audit)
+
+    def qualification_required(self, config):
+        return config.repair_validation
 
     def __init__(self, config: AspireConfig, tokenizer: Any | None = None):
         if config.mode != "capture":
@@ -151,6 +176,7 @@ class AspireAgent:
             self.config, problem_file=data.get("problem_file", self.config.problem_file)
         )
         manifest, expected_files = await asyncio.to_thread(load_handoff, config)
+        manifest = self.prepare_manifest(manifest)
         actor = manifest.model_identity["future_internal_actor"]
         if (
             config.checkpoint_revision != actor["revision"]
@@ -178,7 +204,7 @@ class AspireAgent:
             {
                 **asdict(manifest),
                 "synthetic": False,
-                "reward_source": "synthetic-static-v1",
+                "reward_source": self.reward_source,
             },
         )
         await audit.event("workflow_session_bound", **context_data)
@@ -211,21 +237,25 @@ class AspireAgent:
                 model_identity=identity,
                 timeout_seconds=config.request_timeout_seconds,
             )
-            evaluator = MockEvaluator(audit)
-            broker = ToolBroker(workspace, manifest.public, evaluator, audit)
+            evaluator = self.create_evaluator(audit)
+            await self.initialize_evaluator(evaluator)
+            broker = self.create_broker(workspace, manifest.public, evaluator, audit)
+            await self.initialize_broker(broker)
             if config.repair_validation:
                 await broker.initialize_repair_fixture(
                     FIXTURES / "scripted_episode.json"
                 )
-            runtime = CodingRuntime(manifest.public, config, transport, broker, audit)
+            runtime = self.create_runtime(
+                manifest.public, config, transport, broker, audit
+            )
             result = await runtime.run()
             reconciliation = await asyncio.to_thread(reconcile, audit.root)
             await audit.save_json("reconciliation.json", reconciliation)
             repair_qualified = True
-            if config.repair_validation:
+            if self.qualification_required(config):
                 try:
                     qualification = await asyncio.to_thread(
-                        verify_repair_episode, audit.root
+                        self.qualify_episode, audit.root
                     )
                 except InfrastructureError as error:
                     repair_qualified = False
@@ -234,7 +264,7 @@ class AspireAgent:
             await audit.event(
                 "workflow_reward_returned",
                 reward=result["reward"],
-                synthetic_reward=True,
+                synthetic_reward=evaluator.synthetic,
                 session_owned_by="InferenceServiceWorkflow",
             )
             from areal.v2.inference_service.controller.workflow import (
@@ -251,9 +281,13 @@ class AspireAgent:
                 "harness_digest": manifest.harness_digest,
                 "state": result["state"],
                 "repair_validation_required": config.repair_validation,
+                "episode_qualification_required": self.qualification_required(config),
                 "repair_qualified": repair_qualified,
-                "reward_source": "synthetic-static-v1",
+                "reward_source": self.reward_source,
                 "raw_terminal_reward": result["reward"],
+                "automatic_finalization": result.get("automatic_finalization"),
+                "policy_no_execution": result.get("policy_no_execution"),
+                "generation_budget": asdict(manifest.public.budget),
             }
             await audit.save_json(
                 "eligibility.json",

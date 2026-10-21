@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Trusted M2 Execution Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "episode_id", "run_id", "code_sha256", "config_sha256", "task", "state_identity", "seed", "purpose", "status", "success", "reward", "error_class", "steps", "wall_seconds", "stdout", "stderr", "trace_hash", "evidence", "processes", "cleanup_complete", "synthetic"],
+  "properties": {
+    "schema_version": {"const": "trusted-execution-v1"},
+    "episode_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "code_sha256": {"$ref": "#/$defs/hash"},
+    "config_sha256": {"$ref": "#/$defs/hash"},
+    "task": {"enum": ["put_the_bowl_on_the_stove", "open_the_middle_drawer_of_the_cabinet"]},
+    "state_identity": {"anyOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
+    "seed": {"enum": [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65]},
+    "purpose": {"enum": ["boundary_probe", "development", "terminal_train", "selection", "acceptance_probe"]},
+    "status": {"enum": ["success", "failure", "crash", "timeout", "forbidden_api", "infrastructure_invalid"]},
+    "success": {"type": ["boolean", "null"]},
+    "reward": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "error_class": {"type": ["string", "null"]},
+    "steps": {"type": "integer", "minimum": 0},
+    "wall_seconds": {"type": "number", "minimum": 0},
+    "stdout": {"type": "string"},
+    "stderr": {"type": "string"},
+    "trace_hash": {"$ref": "#/$defs/hash"},
+    "evidence": {"type": "object", "required": ["trace.json", "simulator.log", "submission.py", "config.json"], "additionalProperties": {"$ref": "#/$defs/hash"}},
+    "processes": {"type": "object", "additionalProperties": false, "required": ["generated", "simulator"], "properties": {"generated": {"type": ["integer", "null"]}, "simulator": {"type": ["integer", "null"]}}},
+    "cleanup_complete": {"type": "boolean"},
+    "synthetic": {"const": false}
+  },
+  "$defs": {"hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "infrastructure_invalid"}}}, "then": {"properties": {"success": {"const": null}, "reward": {"const": null}}}},
+    {"if": {"properties": {"status": {"const": "success"}}}, "then": {"properties": {"success": {"const": true}, "reward": {"const": 1}}}},
+    {"if": {"properties": {"status": {"enum": ["failure", "crash", "timeout", "forbidden_api"]}}}, "then": {"properties": {"success": {"const": false}, "reward": {"const": 0}}}},
+    {"if": {"properties": {"purpose": {"const": "boundary_probe"}}}, "then": {"properties": {"seed": {"enum": [51, 52]}}}},
+    {"if": {"properties": {"purpose": {"enum": ["development", "terminal_train", "acceptance_probe"]}}}, "then": {"properties": {"seed": {"enum": [51, 52, 53, 54, 55, 56, 57, 58, 59, 60]}}}},
+    {"if": {"properties": {"purpose": {"const": "selection"}}}, "then": {"properties": {"seed": {"enum": [61, 62, 63, 64, 65]}}}}
+  ]
+}

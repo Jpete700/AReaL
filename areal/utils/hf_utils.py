@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from functools import lru_cache
 from typing import Any, Literal, overload
 
 import transformers
 
 import areal.utils.logging as logging
-from areal.utils import pkg_version
 
 logger = logging.getLogger("HFUtils")
 
@@ -40,9 +40,13 @@ def apply_chat_template(
     tokenize: bool = True,
     **kwargs: Any,
 ) -> list[int] | str:
-    """Apply chat template, normalising transformers >=5.0 dict return to list[int]."""
+    """Apply chat template, normalising mapping returns to token IDs.
+
+    Custom/tokenizer fixtures can return a list regardless of the installed
+    transformers version, so the actual return value determines normalization.
+    """
     result = tokenizer.apply_chat_template(messages, tokenize=tokenize, **kwargs)
-    if tokenize and pkg_version.is_version_greater_or_equal("transformers", "5.0"):
+    if tokenize and isinstance(result, Mapping):
         return list(result["input_ids"])
     return result
 

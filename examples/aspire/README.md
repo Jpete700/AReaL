@@ -1,15 +1,19 @@
-# ASPIRE M1: bounded coding episodes and verified capture
+# ASPIRE: bounded coding episodes and trusted reward
 
-M1 is complete for the capture/replay-only adapter scope. The evidence includes a
-scripted failure–inspect–repair–submit episode, production HTTP/session/export protocol
-tests, and a real Qwen3-Coder capture with independently verified local tensors. No
-optimizer or trusted robot execution is implemented.
+M1 capture and M2 trusted ASPIRE reward service are complete for the documented
+single-task engineering scope. M2 connects actual simulator replay, isolated code,
+independent benchmark scoring and exact native tensor export. No gradient, optimizer,
+checkpoint update or inference weight synchronization is implemented.
 
-Final review: [M1_ACCEPTANCE.md](M1_ACCEPTANCE.md). Source/model/profile pins:
-[pins.json](pins.json). Remaining milestones: [M2_M3_BOUNDARY.md](M2_M3_BOUNDARY.md).
-Real inference details: [README_capture.md](README_capture.md).
+- [M2 acceptance and retained evidence](M2_ACCEPTANCE.md)
+- [Trusted service and collection entry points](trusted/README.md)
+- [Optional later feedback profile](profiles/feedback_v2/README.md)
+- [M3 and later boundaries](M2_M3_BOUNDARY.md)
+- Historical M1 review: [M1_ACCEPTANCE.md](M1_ACCEPTANCE.md)
+- Source/model/profile pins: [pins.json](pins.json)
+- Real inference capture details: [README_capture.md](README_capture.md)
 
-## Verified result and limits
+## Historical M1 capture result and limits
 
 The 2026-10-08 single-node BF16 TP4 Qwen3-Coder-30B-A3B-Instruct validation completed
 two independent, causally linked coding repair episodes:

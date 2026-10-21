@@ -209,3 +209,8 @@ wandb/
 outputs/
 sympy/
 !/docs/figures/*
+
+# Local ASPIRE deployment evidence and generated profiles
+/examples/aspire/profiles/*/runtime/
+/examples/aspire/profiles/*/checks/
+/m2/

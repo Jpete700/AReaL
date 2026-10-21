@@ -1,0 +1,31 @@
+{
+  "profile": "stage2-inline-feedback-v2.1",
+  "overrides": [
+    "examples/__init__.py",
+    "examples/aspire/agent.py",
+    "examples/aspire/capture_lab.py",
+    "examples/aspire/runtime.py",
+    "examples/aspire/tools.py",
+    "examples/aspire/trusted/broker.py",
+    "examples/aspire/trusted/evaluator.py",
+    "examples/aspire/trusted/initial_scene.py",
+    "examples/aspire/trusted/real_agent.py",
+    "examples/aspire/trusted/result.schema.json",
+    "examples/aspire/trusted/seed_roles.py",
+    "examples/aspire/trusted/stage2.py",
+    "examples/aspire/trusted/task_loop.py",
+    "tests/__init__.py",
+    "tests/examples/__init__.py",
+    "tests/examples/aspire/protocol_lab.py",
+    "tests/examples/aspire/test_budget_finalization.py",
+    "tests/examples/aspire/test_budget_workflow.py",
+    "tests/examples/aspire/test_inline_feedback.py",
+    "tests/examples/aspire/test_seed_roles.py",
+    "tests/test_explore8_boundaries.py"
+  ],
+  "omit_from_materialized_profile": [
+    "examples/aspire/trusted/protocol.py",
+    "examples/aspire/trusted/recovery.py",
+    "examples/aspire/trusted/stage3.py"
+  ]
+}

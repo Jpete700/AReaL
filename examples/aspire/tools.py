@@ -324,8 +324,12 @@ class ToolBroker:
             )
             self.traces[replay_id] = trace
             if result.status == "infrastructure_invalid":
-                raise InfrastructureError("mock replay service unavailable")
-            return {"replay_id": replay_id, **asdict(result), "synthetic": True}
+                raise InfrastructureError("replay service unavailable")
+            return {
+                "replay_id": replay_id,
+                **asdict(result),
+                "synthetic": self.evaluator.synthetic,
+            }
         if name == "read_trace":
             if args["replay_id"] not in self.traces:
                 raise PolicyError("trace must belong to this episode")

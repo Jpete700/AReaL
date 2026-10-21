@@ -10,6 +10,13 @@ from .contracts import ReplayResult
 
 
 class MockEvaluator:
+    synthetic = True
+    reward_source = "synthetic-static-v1"
+    generated_code_executed = False
+    runtime_description = (
+        "Replay is a synthetic static fixture, not evidence of robot task success."
+    )
+
     def __init__(self, audit: AuditSink, forced_status: str | None = None):
         if forced_status not in {
             None,

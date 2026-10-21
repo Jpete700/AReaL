@@ -1,6 +1,7 @@
 """Bounded sequential message/tool loop, with explicit response consumption."""
 
 import asyncio
+import copy
 import json
 import time
 from dataclasses import asdict
@@ -31,6 +32,16 @@ class CodingRuntime:
         self.model_calls = 0
         self.generated_tokens = 0
         self.consumed_ids: list[str] = []
+        self.tool_schemas = copy.deepcopy(TOOL_SCHEMAS)
+        if not broker.evaluator.synthetic:
+            next(
+                schema
+                for schema in self.tool_schemas
+                if schema["function"]["name"] == "replay"
+            )["function"]["description"] = (
+                "Execute registered immutable Python through isolated robot RPC on the approved development seed. "
+                "Returns actual benchmark status and trace; stdout never determines success."
+            )
         self.messages: list[dict[str, Any]] = [
             {
                 "role": "system",
@@ -41,7 +52,7 @@ class CodingRuntime:
                     "Use the authoritative task_language in the user message, not guessed scene coordinates. "
                     "Read actual files, use hashes returned by write/edit, replay only public feedback seeds, and submit the selected tested solution.py hash. "
                     "Keep replies brief. Call at most two independent reads together; issue each dependent replay/read_trace/edit/submit in its own turn after observing prior tool results. "
-                    "Replay is a synthetic static fixture, not evidence of robot task success."
+                    + broker.evaluator.runtime_description
                 ),
             },
             {"role": "user", "content": json.dumps(problem.to_dict(), sort_keys=True)},
@@ -79,22 +90,33 @@ class CodingRuntime:
         )
         self.state = state
 
+    def runtime_wall_seconds(self):
+        return self.problem.budget.wall_seconds
+
+    async def finalize_generation(self, reason):
+        """Optional trusted finalization before workflow-owned terminal scoring."""
+        return None
+
+    async def score_submission(self, code):
+        return await self.broker.evaluator.score_submission(code)
+
     async def run(self) -> dict[str, Any]:
         reward = None
         reason = None
         start = time.monotonic()
         await self.transition(EpisodeState.RUNNING)
         try:
-            async with asyncio.timeout(self.problem.budget.wall_seconds):
+            async with asyncio.timeout(self.runtime_wall_seconds()):
                 reason = await self._loop(start)
+                await self.finalize_generation(reason)
                 submission = self.broker.workspace.submission
                 if submission:
                     await self.transition(EpisodeState.SUBMITTED)
-                    reward = await self.broker.evaluator.score_submission(
+                    reward = await self.score_submission(
                         self.broker.workspace.registered[submission.code_sha256]
                     )
                     if reward is None:
-                        raise InfrastructureError("terminal mock evaluator unavailable")
+                        raise InfrastructureError("terminal evaluator unavailable")
                     await self.transition(EpisodeState.SCORED)
                 else:
                     reward = 0.0
@@ -123,12 +145,14 @@ class CodingRuntime:
             await self.audit.event("episode_invalid", error=reason)
             reward = None
         result = {
-            "schema_version": "mock-episode-result-v1",
+            "schema_version": "mock-episode-result-v1"
+            if self.broker.evaluator.synthetic
+            else "trusted-episode-result-v1",
             "synthetic": self.config.mode == "mock",
             "generation_source": "scripted_mock"
             if self.config.mode == "mock"
             else "areal_internal_http",
-            "reward_source": "synthetic-static-v1",
+            "reward_source": self.broker.evaluator.reward_source,
             "state": self.state.value,
             "reason": reason,
             "reward": reward,
@@ -139,15 +163,20 @@ class CodingRuntime:
             "submission": asdict(self.broker.workspace.submission)
             if self.broker.workspace.submission
             else None,
-            "generated_code_executed": False,
+            "generated_code_executed": self.broker.evaluator.generated_code_executed,
             "training_tensors_created": False,
             "optimizer_updates": 0,
+            "automatic_finalization": getattr(self, "automatic_finalization", None),
+            "policy_no_execution": getattr(self, "policy_no_execution", None),
         }
         await self.audit.save_json("episode_result.json", result)
         return result
 
     async def _loop(self, start: float) -> str:
         budget = self.problem.budget
+        # Pinned SGLang validates total tokens with >=, reserving one token.
+        # Apply the same exclusive bound locally and in the native HF renderer.
+        context_limit = budget.context_tokens - int(self.config.mode == "capture")
         while not self.broker.workspace.submission:
             if time.monotonic() - start >= budget.wall_seconds:
                 return "wall_budget_exhausted"
@@ -159,7 +188,7 @@ class CodingRuntime:
             payload = {
                 "model": self.config.model,
                 "messages": self.messages,
-                "tools": TOOL_SCHEMAS,
+                "tools": self.tool_schemas,
                 "n": 1,
                 "store": True,
                 "stream": False,
@@ -169,13 +198,11 @@ class CodingRuntime:
             }
             if self.config.mode == "capture":
                 # The server enforces this total cap as well as the local tokenizer check.
-                payload["max_total_tokens"] = budget.context_tokens
+                payload["max_total_tokens"] = context_limit
             context = await asyncio.to_thread(self.transport.context_size, payload)
-            if context >= budget.context_tokens:
+            if context >= context_limit:
                 return "context_budget_exhausted"
-            payload["max_tokens"] = min(
-                payload["max_tokens"], budget.context_tokens - context
-            )
+            payload["max_tokens"] = min(payload["max_tokens"], context_limit - context)
             self.model_calls += 1
             self.broker.model_context(payload["messages"])
             response = await self.transport.generate(payload)
